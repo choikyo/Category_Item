@@ -42,6 +42,10 @@ body {
 	text-align:	center;
 }
 
+.login_button{
+	text-align: right;
+}
+
 h2, h3 {
 	color: #483D8B;	
 }
@@ -58,11 +62,15 @@ h2, h3 {
 .description{
 	color: #000000;
 }
+.username{
+	color:#FFFAF0;
+} 
  
 category {
 	color : #A0A0A0;
 	
 }
+ 
 
 a {
     color : #FF6347;

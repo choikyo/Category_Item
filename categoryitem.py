@@ -11,7 +11,16 @@ class Category(Base):
     id = Column(Integer, primary_key = True)
     name = Column(String(80), nullable = False)
     description = Column(String(500), nullable = False)
-    insert_date = Column(Integer, server_default = func.strftime('%s','now'))
+    insert_date = Column(Integer, server_default = func.now(), nullable = False)
+    
+    @property
+    def serialize(self):
+       """Return object data in easily serializeable format"""
+       return {
+       		'id': self.id,
+           'name': self.name,
+           'description' : self.description
+       }
 
 class Item(Base):
     __tablename__ = 'item'
@@ -20,8 +29,16 @@ class Item(Base):
     description = Column(String(500), nullable = False)
     category_id = Column(Integer, ForeignKey('category.id'))
     category = relationship(Category)
-    insert_date = Column(Integer, server_default = func.strftime('%s','now'))
-
+    insert_date = Column(Integer, server_default = func.now(), nullable = False)
+    
+    @property
+    def serialize(self):
+       """Return object data in easily serializeable format"""
+       return {
+       		'id': self.id,
+           'name': self.name,
+           'description' : self.description
+       }
 
 engine = create_engine('sqlite:///itemcategory.db')
 

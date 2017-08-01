@@ -4,5 +4,10 @@
 <div class="row col-md-12 content">
      <h3>{{item_name}}</h3>
      <div class="description">{{description}}</div>
+     {% if username != None: %}
+          <br>
+          <div><a href="{{url_for('EditItemForm', item_name=item_name)}}">Edit</a></div>
+          <div><a href="{{url_for('DeleteItem', item_name=item_name)}}">Delete</a></div>
+     {% endif %}
 </div>
 {% endblock %}
