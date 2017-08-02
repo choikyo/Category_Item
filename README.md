@@ -27,7 +27,7 @@ This project implements a Google Login. It requries user to user a Google creden
 
 
 ### URI & Functionality:
-URI: 
+
 | URI | FUNCTION |  Login Require |
 | ------ | ------ | -------|
 | / | main page | no |
