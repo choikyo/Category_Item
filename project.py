@@ -26,7 +26,7 @@ session = DBSession()
 
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
-    # Validate state token
+    # Print value of state token for debbuging
     print "***********request.args:"
     print request.args.get('state')
     print "**********end of request.args"
@@ -113,16 +113,16 @@ def gconnect():
     print "done!"
     return output
 
-    # DISCONNECT - Revoke a current user's token and reset their login_session
 
+# Validate Session Token
 def ValidateAccessToken():
     access_token = login_session.get('access_token')
     if access_token is None:
         return false
     else:
         return true
-
-# Log out
+    
+# Log out - Revoke a current user's token and reset their login_session
 @app.route('/gdisconnect')
 def gdisconnect():
     access_token = login_session.get('access_token')
@@ -172,15 +172,18 @@ def AddItemForm():
             flash("Please login with your Google Account")
             return redirect("/")
     
+    #rendering new item form html UI
     if request.method == 'GET':
         category = session.query(Category).order_by(Category.name)
         return render_template('new_item.html', category=category, username=username)
     
+    # adding item to database, then redirect 
     if request.method == 'POST':
         itemname = request.form['itemname']
         itemdescription = request.form['itemdescription']
         categoryid = request.form['categoryid']
         item = Item(name = itemname, description = itemdescription, category_id = categoryid)
+        flash("New item %s has been added" % itemname)
         session.add(item)
         session.commit()
         return redirect("/")
@@ -193,11 +196,13 @@ def EditItemForm(item_name):
         flash("Please login with your Google Account")
         return redirect("/")
     
+    #render edit item form html UI
     if request.method == 'GET':
         category = session.query(Category).order_by(Category.name)
         item=session.query(Item).filter(Item.name==item_name).first()
         return render_template('edit_item.html', item=item, username=username, category=category)
     
+    #update existing item, then redirect
     if request.method == 'POST':
         itemname = request.form['itemname']
         itemdescription = request.form['itemdescription']
@@ -229,9 +234,7 @@ def DeleteItem(item_name):
         session.commit()
         flash("%s has been deleted" % itemname)
         return redirect("/")
-    
         
-    
 # Show list of items of a selected category
 @app.route('/catalog/<string:category_name>/<string:item_name>')
 def ShowItemDesc(category_name,item_name):
@@ -275,14 +278,19 @@ def MainPage():
 # JSON all item
 @app.route('/catalog.json')
 def getAllItems():
-    item = session.query(Item).order_by(Item.name).all()
+    item = session.query(Item).join(Category).all()
     return jsonify(Item=[i.serialize for i in item])
 
 @app.route('/catalog/<string:category_name>.json')
-def getOneItem(category_name):
+def getOneCategory(category_name):
     category = session.query(Category).filter(Category.name==category_name).first()
     return jsonify(category.serialize)
-    
+
+@app.route('/catalog/<string:item_name>.json')
+def getOneItem(item_name):
+    item = session.query(Item).filter(Item.name==item_name).all()
+    return jsonify(item.serialize)
+
 
 if __name__ == '__main__':
     app.debug = True

@@ -15,12 +15,13 @@ class Category(Base):
     
     @property
     def serialize(self):
-       """Return object data in easily serializeable format"""
-       return {
-       		'id': self.id,
-           'name': self.name,
-           'description' : self.description
-       }
+        """Return object data in easily serializeable format"""
+        return {
+            'id':self.id,
+            'name':self.name,
+            'description': self.description
+        }
+        
 
 class Item(Base):
     __tablename__ = 'item'
@@ -33,12 +34,12 @@ class Item(Base):
     
     @property
     def serialize(self):
-       """Return object data in easily serializeable format"""
-       return {
-       		'id': self.id,
-           'name': self.name,
-           'description' : self.description
-       }
+        """Return object data in easily serializeable format"""
+        return {
+            'id':self.id,
+            'name':self.name,
+            'description': self.description
+        }
 
 engine = create_engine('sqlite:///itemcategory.db')
 

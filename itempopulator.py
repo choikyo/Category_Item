@@ -22,7 +22,7 @@ session.add(category2)
 
 #Add Items
 item1 = Item(name = "Soccer Ball", description = "A soccer ball" , category_id = 1)
-session.add(item1)
+session.add(item1)  
 
 item2 = Item(name = "Soccer socks", description = "Long socks that protects the ankels and knees" , category_id = 1)
 session.add(item2)
