@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, jsonify, url_for, flash
+from flask import Flask, render_template, request
+from flask import redirect, jsonify, url_for, flash
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from categoryitem import Base, Category, Item
@@ -12,7 +13,7 @@ import json
 from flask import make_response
 import requests
 app = Flask(__name__)
-app.secret_key='some random generated key'
+app.secret_key = 'some random generated key'
 CLIENT_ID = json.loads(
     open('client_secrets.json', 'r').read())['web']['client_id']
 APPLICATION_NAME = "ITEM CATALOG"
@@ -30,7 +31,7 @@ def gconnect():
     print "***********request.args:"
     print request.args.get('state')
     print "**********end of request.args"
-    
+
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state parameter.'), 401)
         response.headers['Content-Type'] = 'application/json'
@@ -82,8 +83,9 @@ def gconnect():
     print "Access token: %s" % stored_access_token
     stored_gplus_id = login_session.get('gplus_id')
     if stored_access_token is not None and gplus_id == stored_gplus_id:
-        response = make_response(json.dumps('Current user is already connected.'),
-                                 200)
+        response = make_response(
+            json.dumps('Current user is already connected.'),
+            200)
         response.headers['Content-Type'] = 'application/json'
         return response
 
@@ -108,7 +110,11 @@ def gconnect():
     output += '!</h1>'
     output += '<img src="'
     output += login_session['picture']
-    output += ' " style = "width: 300px; height: 300px;border-radius: 150px;-webkit-border-radius: 150px;-moz-border-radius: 150px;"> '
+    output += ''' " style = "width: 300px;
+                            height: 300px;
+                            border-radius: 150px;
+                            -webkit-border-radius: 150px;
+                            -moz-border-radius: 150px;"> '''
     flash("you are now logged in as %s" % login_session['username'])
     print "done!"
     return output
@@ -121,20 +127,24 @@ def ValidateAccessToken():
         return false
     else:
         return true
-    
+
+
 # Log out - Revoke a current user's token and reset their login_session
 @app.route('/gdisconnect')
 def gdisconnect():
     access_token = login_session.get('access_token')
     if access_token is None:
         print 'Access Token is None'
-        response = make_response(json.dumps('Current user not connected.'), 401)
+        response = make_response(
+            json.dumps('Current user not connected.'),
+            401)
         response.headers['Content-Type'] = 'application/json'
         return response
     print 'In gdisconnect access token is %s', access_token
     print 'User name is: '
     print login_session['username']
-    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s' % login_session['access_token']
+    url = 'https://accounts.google.com/o/oauth2/revoke?token=%s'
+    url = url % login_session['access_token']
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
     print 'result is '
@@ -145,69 +155,89 @@ def gdisconnect():
         del login_session['username']
         del login_session['email']
         del login_session['picture']
-        response = make_response(json.dumps('Successfully disconnected.'), 200)
+        response = make_response(
+            json.dumps('Successfully disconnected.'),
+            200)
         response.headers['Content-Type'] = 'application/json'
-        #return response
         return redirect("/")
     else:
-        #response = make_response(json.dumps(access_token, 400))
-        response = make_response(json.dumps('Failed to revoke token for given user.', 400))
+        response = make_response(json.dumps(
+            'Failed to revoke token for given user.', 400))
         response.headers['Content-Type'] = 'application/json'
         return response
 
 
-
 # Return username if exists
-def GetUsername():
-    username = None
-    if 'username' in login_session:
-        username =  login_session['username']
+def GetEmail():
+    email = None
+    if 'email' in login_session:
+        username = login_session['email']
     return username
+
+
+# Authorizing on item
+def GetAuthor(item_name):
+    item = session.query(Item).filter(
+        Item.name == item_name).first()
+    return item.created_by
+
 
 # Add item form
 @app.route('/catalog/newItem', methods=['GET', 'POST'])
 def AddItemForm():
-    username = GetUsername()
-    if username == None:
+    username = GetEmail()
+    if username is None:
             flash("Please login with your Google Account")
             return redirect("/")
-    
-    #rendering new item form html UI
+
+    # rendering new item form html UI
     if request.method == 'GET':
         category = session.query(Category).order_by(Category.name)
-        return render_template('new_item.html', category=category, username=username)
-    
-    # adding item to database, then redirect 
+        return render_template('new_item.html',
+                               category=category,
+                               username=username)
+
+    # adding item to database, then redirect
     if request.method == 'POST':
         itemname = request.form['itemname']
         itemdescription = request.form['itemdescription']
         categoryid = request.form['categoryid']
-        item = Item(name = itemname, description = itemdescription, category_id = categoryid)
+        item = Item(name=itemname,
+                    description=itemdescription,
+                    category_id=categoryid,
+                    created_by=username)
         flash("New item %s has been added" % itemname)
         session.add(item)
         session.commit()
         return redirect("/")
-    
+
+
 # Edit item form
 @app.route('/catalog/<string:item_name>/edit', methods=['GET', 'POST'])
 def EditItemForm(item_name):
-    username = GetUsername()
-    if username == None:
+    username = GetEmail()
+    # authentication check  & item authorization check
+    if username is None or GetAuthor(item_name) != username:
         flash("Please login with your Google Account")
         return redirect("/")
-    
-    #render edit item form html UI
+
+    # render edit item form html UI
     if request.method == 'GET':
         category = session.query(Category).order_by(Category.name)
-        item=session.query(Item).filter(Item.name==item_name).first()
-        return render_template('edit_item.html', item=item, username=username, category=category)
-    
-    #update existing item, then redirect
+        item = session.query(Item).filter(
+            Item.name == item_name).first()
+        return render_template('edit_item.html',
+                               item=item,
+                               username=username,
+                               category=category)
+
+    # update existing item, then redirect
     if request.method == 'POST':
         itemname = request.form['itemname']
         itemdescription = request.form['itemdescription']
         categoryid = request.form['categoryid']
-        update_item=session.query(Item).filter(Item.name==item_name).one()
+        update_item = session.query(Item).filter(
+            Item.name == item_name).one()
         update_item.name = itemname
         update_item.description = itemdescription
         update_item.category_id = categoryid
@@ -216,79 +246,111 @@ def EditItemForm(item_name):
         flash("%s has been updated" % item_name)
         return redirect("/")
 
+
 # Delete an item
 @app.route('/catalog/<string:item_name>/delete', methods=['GET', 'POST'])
 def DeleteItem(item_name):
-    username = GetUsername()
-    if username == None:
-        flash("You do not have permission for this page. Please login with your Google Account")
+    username = GetEmail()
+    # authentication check  & item authorization check
+    if username is None or GetAuthor(item_name) != username:
+        flash("""
+    You do not have permission for this page.
+    Please login with your Google Account
+    """)
         return redirect("/")
-    
+
     if request.method == 'GET':
         return render_template('delete_item.html', item_name=item_name)
-    
+
     if request.method == 'POST':
         itemname = request.form['pitem_name']
-        item = session.query(Item).filter(Item.name==itemname).one()
+        item = session.query(Item).filter(Item.name == itemname).one()
         session.delete(item)
         session.commit()
         flash("%s has been deleted" % itemname)
         return redirect("/")
-        
+
+
 # Show list of items of a selected category
 @app.route('/catalog/<string:category_name>/<string:item_name>')
-def ShowItemDesc(category_name,item_name):
-    username = GetUsername()
-    item = session.query(Item).join(Category).filter(Category.name==category_name).filter(Item.name==item_name).first()
-    return render_template('show_item_description.html', description =  item.description, item_name = item_name,username=username)
+def ShowItemDesc(category_name, item_name):
+    username = GetEmail()
+    item = session.query(Item).join(Category).filter(
+        Category.name == category_name
+        ).filter(Item.name == item_name).first()
+    return render_template('show_item_description.html',
+                           item=item,
+                           username=username)
+
 
 # Show list of items of a selected category
 @app.route('/catalog/<string:category_name>/items')
 def CategoryItemList(category_name):
-    username = GetUsername()
+    username = GetEmail()
     category = session.query(Category).order_by(Category.name)
-    item = session.query(Item).join(Category).filter(Category.name==category_name)
+    item = session.query(Item).join(Category).filter(
+        Category.name == category_name)
     count = item.from_self().count()
-    if count >1:
+    if count > 1:
         count_str = str(count) + " items"
     else:
         count_str = str(count) + " item"
-    
+
     return render_template('category_item.html',
-                            category = category,
-                            item = item, 
-                            category_name=category_name,
-                            count_str=count_str,
-                            username=username)
+                           category=category,
+                           item=item,
+                           category_name=category_name,
+                           count_str=count_str,
+                           username=username)
+
 
 # Main page
 @app.route('/')
 @app.route('/main')
 def MainPage():
-    state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x in xrange(32))
+    state = ''.join(random.choice(
+        string.ascii_uppercase + string.digits) for x in xrange(32))
     login_session['state'] = state
     category = session.query(Category).order_by(Category.name)
     item = session.query(Item).join(Category).limit(8)
     item = item.from_self().order_by(Item.insert_date.desc())
     username = None
-    if 'username' in login_session:
-        username =  login_session['username']
-    return render_template('main.html', category=category, item=item, username=username, STATE=state)
+    if 'email' in login_session:
+        username = login_session['email']
+    return render_template('main.html',
+                           category=category,
+                           item=item,
+                           username=username,
+                           STATE=state)
+
 
 # JSON all item
 @app.route('/catalog.json')
 def getAllItems():
-    item = session.query(Item).join(Category).all()
-    return jsonify(Item=[i.serialize for i in item])
+    data = {}
+    item_json = {}
+    category = session.query(Category).all()
+    for i in category:
+        data[i.name] = i.serialize
+        item = session.query(Item).filter(Item.category_id == i.id).all()
+        item_json = [j.serialize for j in item]
+        print "*****start*******"
+        print item_json
+        print "*****end*******"
+        data[i.name]["items"] = item_json
+    return jsonify(data)
+
 
 @app.route('/catalog/<string:category_name>.json')
 def getOneCategory(category_name):
-    category = session.query(Category).filter(Category.name==category_name).first()
+    category = session.query(Category).filter(
+        Category.name == category_name).first()
     return jsonify(category.serialize)
+
 
 @app.route('/catalog/<string:item_name>.json')
 def getOneItem(item_name):
-    item = session.query(Item).filter(Item.name==item_name).all()
+    item = session.query(Item).filter(Item.name == item_name).all()
     return jsonify(item.serialize)
 
 

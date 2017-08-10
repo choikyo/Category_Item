@@ -31,6 +31,7 @@ class Item(Base):
     category_id = Column(Integer, ForeignKey('category.id'))
     category = relationship(Category)
     insert_date = Column(Integer, server_default = func.now(), nullable = False)
+    created_by = Column(String(250), nullable=False)
     
     @property
     def serialize(self):
