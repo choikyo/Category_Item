@@ -171,8 +171,8 @@ def gdisconnect():
 def GetEmail():
     email = None
     if 'email' in login_session:
-        username = login_session['email']
-    return username
+        email = login_session['email']
+    return email
 
 
 # Authorizing on item
