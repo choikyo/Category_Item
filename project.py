@@ -28,9 +28,9 @@ session = DBSession()
 @app.route('/gconnect', methods=['POST'])
 def gconnect():
     # Print value of state token for debbuging
-    print "***********request.args:"
-    print request.args.get('state')
-    print "**********end of request.args"
+    print ("***********request.args:")
+    print (request.args.get('state'))
+    print ("**********end of request.args")
 
     if request.args.get('state') != login_session['state']:
         response = make_response(json.dumps('Invalid state parameter.'), 401)
@@ -52,7 +52,7 @@ def gconnect():
 
     # Check that the access token is valid.
     access_token = credentials.access_token
-    print "connect setup===> access_token : %s" % access_token
+    print ("connect setup===> access_token : %s" % access_token)
     url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
            % access_token)
     h = httplib2.Http()
@@ -75,12 +75,12 @@ def gconnect():
     if result['issued_to'] != CLIENT_ID:
         response = make_response(
             json.dumps("Token's client ID does not match app's."), 401)
-        print "Token's client ID does not match app's."
+        print ("Token's client ID does not match app's.")
         response.headers['Content-Type'] = 'application/json'
         return response
 
     stored_access_token = login_session.get('access_token')
-    print "Access token: %s" % stored_access_token
+    print ("Access token: %s" % stored_access_token)
     stored_gplus_id = login_session.get('gplus_id')
     if stored_access_token is not None and gplus_id == stored_gplus_id:
         response = make_response(
@@ -116,7 +116,7 @@ def gconnect():
                             -webkit-border-radius: 150px;
                             -moz-border-radius: 150px;"> '''
     flash("you are now logged in as %s" % login_session['username'])
-    print "done!"
+    print ("done!")
     return output
 
 
@@ -134,21 +134,21 @@ def ValidateAccessToken():
 def gdisconnect():
     access_token = login_session.get('access_token')
     if access_token is None:
-        print 'Access Token is None'
+        print ('Access Token is None')
         response = make_response(
             json.dumps('Current user not connected.'),
             401)
         response.headers['Content-Type'] = 'application/json'
         return response
-    print 'In gdisconnect access token is %s', access_token
-    print 'User name is: '
-    print login_session['username']
+    print ('In gdisconnect access token is %s', access_token)
+    print ('User name is: ')
+    print (login_session['username'])
     url = 'https://accounts.google.com/o/oauth2/revoke?token=%s'
     url = url % login_session['access_token']
     h = httplib2.Http()
     result = h.request(url, 'GET')[0]
-    print 'result is '
-    print result
+    print ('result is ')
+    print (result)
     if result['status'] == '200':
         del login_session['access_token']
         del login_session['gplus_id']
@@ -334,9 +334,9 @@ def getAllItems():
         data[i.name] = i.serialize
         item = session.query(Item).filter(Item.category_id == i.id).all()
         item_json = [j.serialize for j in item]
-        print "*****start*******"
+        print ("*****start*******")
         print item_json
-        print "*****end*******"
+        print ("*****end*******")
         data[i.name]["items"] = item_json
     return jsonify(data)
 
