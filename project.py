@@ -335,7 +335,7 @@ def getAllItems():
         item = session.query(Item).filter(Item.category_id == i.id).all()
         item_json = [j.serialize for j in item]
         print ("*****start*******")
-        print item_json
+        print (item_json)
         print ("*****end*******")
         data[i.name]["items"] = item_json
     return jsonify(data)
